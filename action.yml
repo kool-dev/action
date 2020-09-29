@@ -6,3 +6,7 @@ runs:
   steps:
     - run: curl -fsSL https://raw.githubusercontent.com/kool-dev/kool/master/install.sh | sudo bash
       shell: bash
+
+branding:
+  icon: 'terminal'
+  color: 'blue'
