@@ -1,0 +1,8 @@
+name: 'Kool Install'
+description: 'Install Kool CLI'
+
+runs:
+  using: "composite"
+  steps:
+    - run: curl -fsSL https://raw.githubusercontent.com/kool-dev/kool/master/install.sh | sudo bash
+      shell: bash
