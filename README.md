@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: kool-dev/action@master
+      - uses: kool-dev/action@v1
 
       - name: Checking kool.dev version
         run: kool --version
