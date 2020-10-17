@@ -10,7 +10,7 @@ This action is only available for Linux and macOS [virtual environments](https:/
 
 ## Usage
 
-Just uses `kool-dev/action@master` at your action yml file. e.g:
+Just uses `kool-dev/action@v1` at your action yml file. e.g:
 
 ```yml
 on: [push, workflow_dispatch]
