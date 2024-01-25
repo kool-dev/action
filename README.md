@@ -10,7 +10,7 @@ This action is only available for Linux and macOS [virtual environments](https:/
 
 ## Usage
 
-Just uses `kool-dev/action@v1` at your action yml file. e.g:
+Just use `kool-dev/action@v1` at your action YAML configuration file:
 
 ```yml
 on: [push, workflow_dispatch]
@@ -23,6 +23,6 @@ jobs:
     steps:
       - uses: kool-dev/action@v1
 
-      - name: Checking kool.dev version
+      - name: Checking kool.dev Version
         run: kool --version
 ```
