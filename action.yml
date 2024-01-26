@@ -4,7 +4,7 @@ description: 'Install Kool CLI'
 runs:
   using: "composite"
   steps:
-    - run: curl -fsSL "https://kool.dev/install?v=2&source=action" | bash
+    - run: curl -fsSL "https://kool.dev/install?v=3&source=action" | bash
       shell: bash
 
 branding:
