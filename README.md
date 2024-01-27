@@ -1,8 +1,10 @@
 ## About
 
-Github Action to install [kool.dev](https://kool.dev) CLI.
+Github Action to install [kool.dev](https://kool.dev) CLI tool.
 
-For more information check https://kool.dev or https://github.com/kool-dev/kool.
+Get `kool` to run on CI the environment just like you do locally.
+
+For more information check [Kool.dev website](https://kool.dev) or [the CLI repository on Github](https://github.com/kool-dev/kool).
 
 ## Supported Runners
 
@@ -10,7 +12,7 @@ This action is only available for Linux and macOS [virtual environments](https:/
 
 ## Usage
 
-Just use `kool-dev/action@v1` at your action YAML configuration file:
+Just use `kool-dev/action@v3` at your action YAML configuration file:
 
 ```yml
 on: [push, workflow_dispatch]
@@ -21,8 +23,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: kool-dev/action@v1
+      - uses: kool-dev/action@v3
 
       - name: Checking kool.dev Version
-        run: kool --version
+        run: |
+          kool --version
+          kool start
+          # ...
 ```
+
+And you will get `kool` v3.x (latest version on the v3 series).
