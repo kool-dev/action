@@ -36,33 +36,13 @@ And you will get `kool` v3.x (latest version on the v3 series).
 
 ## Shared Docker image actions
 
-The root action remains the Kool CLI installer. Its existing `v3` tags and
-`kool-dev/action@v3` usage are unchanged.
+The root installer and existing `kool-dev/action@v3` usage are unchanged.
+Image repositories use four separate actions:
 
-Image repositories can use these separate actions, pinned to a reviewed commit:
+- `kool-dev/action/image-build`: native Docker builder.
+- `kool-dev/action/image-parent`: tested parent ID/layer check.
+- `kool-dev/action/image-stage`: push tested IDs and upload digest metadata.
+- `kool-dev/action/image-publish`: validate the complete release and publish indexes.
 
-```yaml
-- uses: kool-dev/action/image-build@<40-character-commit>
-  with:
-    arch: amd64
-
-# After image-specific builds/tests/scans:
-- uses: kool-dev/action/image-stage@<same-commit>
-  with:
-    canonical-repository: kool-dev/docker-example
-    default-branch: master
-    repository: kooldev/example
-    arch: amd64
-    group: example
-    images: '[{"tag":"example","id":"sha256:<tested-image-id>"}]'
-    username: ${{ secrets.DOCKER_USERNAME }}
-    password: ${{ secrets.DOCKER_PASSWORD }}
-```
-
-`image-parent` checks fresh same-job parent IDs/layers. The reusable publisher
-is `kool-dev/action/.github/workflows/image-publish.yml@<same-commit>`.
-Use the same commit for every action, reusable workflow and `tooling-ref` input;
-the installer's `v3` tag is not a version alias for the image tooling.
-
-See [image CI](image-ci.md) for the pipeline, publication guards, limitations and
-Bash/`jq` tests. No Python release helpers or resume workflow are required.
+Pin all four to the same reviewed commit, not the installer's `v3` tag.
+See [image CI](image-ci.md) for configuration, release guards and Bash/`jq` tests.

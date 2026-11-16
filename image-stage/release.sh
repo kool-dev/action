@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Shared image release boundary. Requires Bash, jq and Docker; never rebuilds.
 set -euo pipefail
 
 die() { echo "::error::$*" >&2; exit 1; }
@@ -94,7 +93,7 @@ validate() {
 
 publish() {
   local records tag arch digest suffix aliases=${RELEASE_ARCH_ALIASES:-false}
-  records=$(validate) # Entire set checked before the FIRST stable-tag write.
+  records=$(validate)
   [[ $aliases == false || $aliases == true ]] || die "Invalid architecture alias setting"
   local -a sources=()
   while IFS= read -r tag; do

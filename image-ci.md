@@ -1,53 +1,42 @@
 # Shared Docker image CI
 
-The active image repositories use the same release boundary, implemented with
-Bash and `jq` here in `kool-dev/action`. Keep image-specific builds, smoke tests,
-scanners, supported tags and dispatch recipients in each image repository.
+Keep builds, runtime tests, scanners, supported tags and downstream dispatch in
+each image repository. Pin all four shared actions to the same reviewed commit.
 
 ## Pipeline
 
-1. Run generation checks once. Export the complete expected stable-tag list.
-2. Build/test on native `ubuntu-24.04` and/or `ubuntu-24.04-arm` jobs through
-   `image-build`. Its Docker driver keeps fresh same-job parents available.
-3. Pull upstream parents only for base builds. Do not force-pull derived parents.
-   Use `image-parent` to assert the tested base ID and full layer prefix.
-4. After **all** tests/scans in a native job pass, call `image-stage` with a JSON
-   array of `{tag,id}` pairs. It checks the local IDs/platforms, tags those IDs,
-   pushes them once and captures Docker's returned digests without remote
-   inspections. It uploads one run/attempt/group/architecture artifact.
-5. A single `image-publish.yml` job needs the entire native matrix and checks.
-   It validates every expected tag/platform record before login or stable writes,
-   then assembles indexes from those exact immutable digests. Single-arch
-   releases get a one-platform index (not ARM support). Node can retain its historical
-   `-x86_64`/`-aarch64` aliases through `architecture-aliases`.
-6. Repository-specific downstream dispatch jobs need successful publication.
+1. Run generation checks and export the complete expected stable-tag list.
+2. Use `image-build` on native `ubuntu-24.04` and/or `ubuntu-24.04-arm` jobs.
+   Its Docker driver keeps same-job parents available. Pull upstream base images;
+   do not force-pull derived parents. `image-parent` checks their IDs and layers.
+3. After all tests/scans pass, call `image-stage` with a JSON array of `{tag,id}`
+   pairs. It verifies local IDs/platforms, pushes those IDs and records Docker's
+   returned digests in current-run/attempt artifacts without remote inspections.
+4. A publish job needs all checks and native jobs. Call `image-publish` with the
+   complete `tags` and `architectures` JSON arrays. It validates the artifact set
+   before login or stable updates, then creates indexes from the tested digests.
+5. Downstream dispatch jobs need successful publication.
 
-Pin **all actions, the reusable workflow and its `tooling-ref` input to the same
-40-character action-repository commit**. This prevents a branch update from silently changing
-other repositories' release code. Update pins deliberately after testing shared
-changes. The publisher checks out this pinned tooling, not mutable caller files.
+Staging/publication require `canonical-repository`, `default-branch`, Docker
+`repository`, `username` and `password`. Stage also takes `arch`, `images` and a
+unique matrix `group`. Publish defaults to amd64+arm64; set `architectures` to
+`["amd64"]` for single-platform releases. Node retains its historical
+`-x86_64`/`-aarch64` aliases with `architecture-aliases: true`.
 
-## Publication guards
+## Release rules
 
-Call staging/publication only for the canonical repository's default branch and
-non-PR events. The shared Bash guard repeats this check before login/staging.
-Do not pass credentials into build/test steps or PR checks. The reusable workflow
-only accepts push, schedule, manual and repository-dispatch releases.
+Call staging/publication only on the canonical repository's default branch for
+non-PR events. The scripts repeat this check before login or publication. Do not
+pass release credentials to build/test steps.
 
-Artifacts are scoped to the current workflow run **and attempt**. The publisher
-rejects missing/duplicate/foreign/stale/malformed records and requires the exact
-expected tag × architecture matrix. It trusts platform/ID checks from the tested
-local images; it does not re-read every staged image's remote manifest/config.
-Docker manifest assembly still performs registry reads and can hit pull quotas.
+The publisher rejects incomplete, duplicate, foreign, stale or malformed records.
+It trusts staging's local platform/ID checks and push digests. Single-platform
+tags use one-entry indexes; this does not add architecture support. Docker Hub
+reads still consume pull allowance.
 
-**Recovery remains Re-run all jobs.** There is no resume workflow or cross-run
-artifact reuse. Stable-tag updates are sequential, not atomic across a release.
-On partial publication, downstream notification stays blocked. Run-scoped staging
-tags accumulate; these actions do not implement registry cleanup.
-
-Keep existing architecture support: PHP, Swoole, WordPress and Node use amd64 +
-arm64; NGINX, SQL Server and OCI8 remain amd64-only until their dependencies are
-separately validated for ARM. This standardizes CI, not runtime support policy.
+After failure, **Re-run all jobs**. There is no cross-attempt reuse or resume
+workflow. Stable updates are sequential, not atomic; downstream dispatch stays
+blocked on failure. Staging tags accumulate until separately cleaned up.
 
 ## Tests
 
@@ -56,8 +45,6 @@ bash image-stage/tests/release.sh
 bash image-stage/tests/registry.sh
 ```
 
-The first test mocks Docker and checks guards, immutable IDs, negative metadata,
-absence of extra registry inspections and fresh-parent assertions. The second
-uses only an ephemeral loopback registry and synthetic scratch images to verify
-actual push digest capture, original config IDs, two/single-platform membership and aliases.
-Scratch fixtures do not execute ARM application code; consumers' native CI does.
+The first checks release/parent contracts with mocked Docker. The second verifies
+real loopback-registry pushes, config IDs, platform membership and aliases using
+scratch fixtures. Native application execution belongs in consumer CI.
