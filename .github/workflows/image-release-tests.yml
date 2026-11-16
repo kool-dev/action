@@ -1,0 +1,49 @@
+name: Shared image CI
+on:
+  push:
+    branches: [master]
+    paths:
+      - action.yml
+      - image-*/**
+      - .github/workflows/image-*.yml
+  pull_request:
+    paths:
+      - action.yml
+      - image-*/**
+      - .github/workflows/image-*.yml
+permissions:
+  contents: read
+jobs:
+  tests:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - name: Mock only the legacy installer download
+        run: |
+          echo "REAL_CURL=$(command -v curl)" >> "$GITHUB_ENV"
+          mkdir -p "$RUNNER_TEMP/installer-mock"
+          cat > "$RUNNER_TEMP/installer-mock/curl" <<'BASH'
+          #!/usr/bin/env bash
+          set -euo pipefail
+          if [[ "$*" == '-fsSL https://kool.dev/install?v=3&source=action' ]]; then
+            printf 'touch %q\n' "$RUNNER_TEMP/installer-invoked"
+          else
+            exec "$REAL_CURL" "$@"
+          fi
+          BASH
+          chmod +x "$RUNNER_TEMP/installer-mock/curl"
+          echo "$RUNNER_TEMP/installer-mock" >> "$GITHUB_PATH"
+      - name: Exercise the unchanged root installer action
+        uses: ./
+      - name: Verify legacy installer invocation
+        run: test -f "$RUNNER_TEMP/installer-invoked"
+      - uses: ./image-build
+        with:
+          arch: amd64
+      - name: Bash release contracts
+        run: bash image-stage/tests/release.sh
+      - name: Real loopback registry
+        run: bash image-stage/tests/registry.sh
+      - name: Lint shared workflows and actions
+        run: |
+          go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12 .github/workflows/image-publish.yml .github/workflows/image-release-tests.yml
